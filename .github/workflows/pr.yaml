@@ -1,0 +1,24 @@
+name: Block Pull Requests with 'Merge branch develop' Commits
+
+on:
+    pull_request: null
+
+jobs:
+    block_merge:
+        runs-on: "ubuntu-20.04"
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v2
+
+            -   name: Check for 'Merge branch develop' Commits
+                if: |
+                    (
+                      github.event.pull_request.head.ref == 'release/*' &&
+                      github.event.pull_request.base.ref == 'develop'
+                    )
+                run: |
+                    if git log --merges --ancestry-path HEAD^..HEAD --pretty=format:%s | grep -q "Merge branch 'develop'"; then
+                      echo "ERROR: This Pull Request contains a merge commit from 'develop'. Merging from 'develop' is not allowed."
+                      exit 1
+                    fi
