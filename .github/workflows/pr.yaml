@@ -1,28 +1,25 @@
-name: Block Pull Requests with 'Merge branch develop' Commits
+name: Block 'Merge branch develop' commits
 
 on:
     push:
         branches:
-            - 'release/*'
-    pull_request_target:
-        types: [opened, synchronize]
-        branches:
-            - 'release/*'
+            - 'release/**'
 
 jobs:
-    block_merge:
-        runs-on: ubuntu-20.04
-
+    block_merge_commits:
+        runs-on: ubuntu-latest
         steps:
-            -   name: Checkout code
+            -   name: Check out the repository
                 uses: actions/checkout@v2
 
-            -   name: Check for 'Merge branch develop' Commits
-                if: |
-                    github.event.pull_request.base.ref == 'develop' &&
-                    github.event.pull_request.head.ref == 'release/*'
+            -   name: Check for merge commits
                 run: |
-                    if git log --merges --ancestry-path HEAD^..HEAD --pretty=format:%s | grep -q "Merge branch 'develop'"; then
-                      echo "ERROR: This Pull Request contains a merge commit from 'develop'. Merging from 'develop' is not allowed."
-                      exit 1
-                    fi
+                    git fetch --depth=1 origin +refs/heads/release/*:refs/remotes/origin/release/*
+                    for branch in $(git for-each-ref --format='%(refname)' refs/remotes/origin/release/*); do
+                      for commit in $(git log --format='%H' --reverse HEAD..$branch); do
+                        if git log --format=%B -n 1 $commit | grep -Eq '^Merge branch '\''develop'\'' into release'; then
+                          echo "Error: Found merge commit with message 'Merge branch 'develop' into release'."
+                          exit 1
+                        fi
+                      done
+                    done
