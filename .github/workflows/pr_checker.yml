@@ -1,0 +1,23 @@
+name: Block Merge to Master or Release from Develop
+
+on:
+    pull_request_target:
+        branches:
+            - master
+            - 'release/*'
+
+jobs:
+    block_merge:
+        runs-on: ubuntu-latest
+
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v2
+
+            -   name: Check for merge commits from develop to master or release
+                run: |
+                    git fetch origin ${{ github.event.pull_request.head.ref }}
+                    if git log --merges --ancestry-path origin/master..${{ github.event.pull_request.head.ref }} --ancestry-path origin/release/*..${{ github.event.pull_request.head.ref }} --pretty=format:%s | grep -q "Merge branch 'develop'"; then
+                      echo "ERROR: This Pull Request contains merge commits from develop to master or release. Merging from develop to master or release is not allowed."
+                      exit 1
+                    fi
