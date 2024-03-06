@@ -1,3 +1,3 @@
 # pr-merge-tests
 
-some text changed
+some text based on release branch
