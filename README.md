@@ -1,3 +1,3 @@
 # pr-merge-tests
 
-some text
+some text changed
